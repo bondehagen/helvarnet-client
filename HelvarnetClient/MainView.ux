@@ -1,0 +1,39 @@
+<App Model="App">
+	<DockPanel>
+		<Panel Dock="Top">
+			<Rectangle Clicked="{connect}" Padding="20" Background="Green" >
+				<Text Color="White">connect</Text>
+			</Rectangle>
+		</Panel>
+		<Panel Dock="Bottom">
+			<Rectangle Clicked="{home}" Padding="20" Background="Blue" >
+				<Text Color="White">home</Text>
+			</Rectangle>
+		</Panel>
+		<Navigator PageHistory="{pages}">
+			<Panel ux:Template="MainPage">
+				<ScrollView>
+					<StackPanel>
+						<Each Items="{groups}">
+							<Panel Background="#eee" Margin="0, 0, 0, 1" Padding="30, 20" Clicked="{selectGroup}">
+								<Text Value="{id}" />
+							</Panel>
+						</Each>
+					</StackPanel>
+				</ScrollView>
+			</Panel>
+			<Panel ux:Template="DetailPage">
+				<ScrollView>
+					<StackPanel>
+						<Each Items="{devices}">
+							<DockPanel Background="#eee" Margin="0, 0, 0, 1" Padding="30, 20">
+								<Text Value="{id}" />
+								<Switch Value="{light}" Dock="Right" />
+							</DockPanel>
+						</Each>
+					</StackPanel>
+				</ScrollView>
+			</Panel>
+		</Navigator>
+	</DockPanel>
+</App>
