@@ -2,22 +2,23 @@
 class HelvarNetService {
 
 	setGroups(groups) {
-		console.log("setGroups")
 		this.groups = groups;
 	}
 
 	constructor() {
 		console.log("HelvarNetService()");
-		this.groups = [{"id": "1", "devices": [{"id": "device2"}]}, { "id": "2", "devices": [{"id": "device2"}]}];
+		this.groups = [];
 		if (this.isConnected == true) {
 			this.ws.close();
 			return;
 		}
-		this.ws = new WebSocket('ws://localhost:3000');
+		this.ws = new WebSocket('ws://192.168.1.187:3000');
 		this.ws.onmessage = (msg) => {
-			if(msg && msg.type == "message") {
+			if (msg && msg.type == "message") {
 				var data = JSON.parse(msg.data);
-				this.setGroups(data.groups);
+				this.setGroups(data.groups.map((g) => {
+					return new Group(this, g);
+				}));
 			}
 		};
 		this.ws.onopen = () => {
@@ -35,8 +36,7 @@ class HelvarNetService {
 		};
 	}
 
-	send(device) {
-		let tosend = "level:" + device;
+	send(tosend) {
 		console.log("send: " + tosend);
 		this.ws.send(tosend);
 	}
@@ -45,16 +45,17 @@ class HelvarNetService {
 class DetailPage {
 	constructor(helvarNetService, group) {
 		console.log("DetailPage()");
-		this.devices = group.devices.map((device) => {
-			return new Device(helvarNetService, device); 
+		this.devices = group.devices.filter((device) => {
+			return (device.type == 1537);
+		}).map((device) => {
+			return new Device(helvarNetService, device);
 		});
 	}
 }
-
-class Device {
-	constructor(helvarNetService, device) {
+class Group {
+	constructor(helvarNetService, group) {
 		this.helvarNetService = helvarNetService;
-		Object.assign(this, device);
+		Object.assign(this, group);
 		this._light = true;
 	}
 
@@ -64,11 +65,26 @@ class Device {
 
 	set light(value) {
 		this._light = value;
-		console.dir(this);
 		if (value)
-			this.helvarNetService.send(this.id.replace('@', '') + ",100");
+			this.helvarNetService.send("group_level:" + this.id + ",100,0");
 		else
-			this.helvarNetService.send(this.id.replace('@', '') + ",0");
+			this.helvarNetService.send("group_level:" + this.id + ",0,0");
+	}
+}
+class Device {
+	constructor(helvarNetService, device) {
+		this.helvarNetService = helvarNetService;
+		Object.assign(this, device);
+		this._light = 100;
+	}
+
+	get light() {
+		return this._light;
+	}
+
+	set light(value) {
+		this._light = value;
+		this.helvarNetService.send("device_level:" + this.id.replace('@', '') + "," + value + ",0");
 	}
 }
 
@@ -96,10 +112,11 @@ export default class App {
 	}
 
 	home() {
-		this.pages.pop();
+		if (this.pages.length > 1)
+			this.pages.pop();
 	}
 
 	connect() {
-		
+		this._helvarNetService = new HelvarNetService();
 	}
 }
